@@ -4,7 +4,7 @@
 
 BuilderOps is an identity-aware chat assistant designed to demonstrate user-specific context surviving across an authenticated first-party API and an external third-party API. The project is structured so additional MLH challenges (Tiger Data event analytics, vector search and Auth0 FGA) can be added later.
 
-**Current status:** initial code scaffold published; live Auth0, D1, Workers AI inference and deployment are NOT yet verified.
+**Current status (2026-11-09):** GitHub Pages frontend deployed; Cloudflare Worker `builderops` uploaded and enabled at `https://builderops.antonio-pasolini.workers.dev`; Cloudflare D1 database `builderops-db` initialized. The Auth0 callback settings were saved by the account owner, but a real Auth0 login and authenticated Workers AI inference have **not yet been tested end-to-end**.
 
 ## Architecture
 
