@@ -5,13 +5,13 @@ Official challenge: https://www.mlh.com/events/global-hack-week-builders-week/ch
 ## Evidence / acceptance checklist
 
 - [ ] Real Auth0 Universal Login works and produces a token for the BuilderOps API audience.
-- [ ] The custom first-party \`GET /api/profile\` returns only the current user's saved preferences.
+- [ ] The custom first-party `GET /api/profile` returns only the current user's saved preferences.
 - [ ] The assistant reads the preferences under the authenticated subject.
 - [ ] Open-Meteo is called through the Worker as a third-party API.
 - [ ] Cloudflare Workers AI answers using the authenticated preferences and the external weather reading.
 - [ ] The same conversation retains identity, history and newly saved preferences.
 - [ ] User B cannot read or modify user A's profile and conversations.
-- [ ] Unauthenticated and invalid JWT requests to \`/api/profile\` return 401.
+- [ ] Unauthenticated and invalid JWT requests to `/api/profile` return 401.
 - [ ] Capture screenshots of authentication, saved preferences, multi-turn conversation, and evidence of tool/API usage.
 - [ ] Publish source and submit the GitHub repository URL to MLH.
 
