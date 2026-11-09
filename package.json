@@ -1,0 +1,24 @@
+{
+  "name": "builderops-context-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Auth0 identity-aware assistant with a Cloudflare Worker, a first-party profile API and Open-Meteo",
+  "scripts": {
+    "dev": "cf dev",
+    "build": "cf build",
+    "deploy": "cf deploy",
+    "check": "node --check src/worker.js && node --check src/main.js && node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@auth0/auth0-spa-js": "^2.3.0",
+    "jose": "^6.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "beta",
+    "cf": "latest",
+    "vite": "^7.0.0"
+  },
+  "engines": {"node": ">=22.18.0"},
+  "license": "MIT"
+}
