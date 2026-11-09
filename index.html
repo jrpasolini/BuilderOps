@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d1221" />
+  <meta name="description" content="BuilderOps: assistente de IA com identidade Auth0, dados de perfil protegidos e API pública de meteorologia." />
+  <title>BuilderOps · Context-preserving Assistant</title>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar"><a href="/" class="brand"><span class="brandmark">◈</span><span>Builder<span class="accent">Ops</span></span></a><div class="topright"><span class="chip">MLH BUILDER WEEK 2026</span><span id="status" class="status">Autenticação pendente</span><button id="authBtn" class="button primary" type="button">Entrar com Auth0</button></div></header>
+  <main class="dashboard">
+    <aside class="sidebar">
+      <div class="sectionLabel">WORKSPACE</div>
+      <div class="navitem active"><span>◉</span> Assistente contextual</div>
+      <div class="navitem"><span>◫</span> Atividades <small>em breve</small></div>
+      <div class="navitem"><span>◇</span> Knowledge Base <small>em breve</small></div>
+      <div class="navitem"><span>◷</span> Timeline <small>em breve</small></div>
+      <div class="sectionLabel later">IDENTIDADE</div>
+      <div class="identity"><span class="avatar">ID</span><div><strong id="userName">Visitante</strong><small id="userSub">Sessão não iniciada</small></div></div>
+      <div class="sidebarFoot">Protected by <strong>Auth0</strong><br>Deployed on <strong>Cloudflare Workers</strong></div>
+    </aside>
+    <section class="content">
+      <div class="hero"><div class="eyebrow"><span class="dot"></span> AUTHENTICATED CONTEXT</div><h1>Seu assistente.<br><span>Seu contexto.</span></h1><p>Uma identidade autenticada, preferências pessoais e ferramentas externas em uma única conversa — sem misturar os dados de usuários.</p></div>
+      <div class="columns">
+        <section class="panel profile"><div class="panelHead"><div><span class="overline">FIRST-PARTY API</span><h2>Preferências da conta</h2></div><span class="pill">Autorizada</span></div><p class="hint">Esses dados são recuperados pelo Worker usando a identidade validada pelo Auth0.</p>
+          <form id="settings" class="settings">
+            <label>Cidade preferida<select id="city" disabled><option value="vitoria">Vitória, ES</option><option value="sao-paulo">São Paulo, SP</option><option value="lisboa">Lisboa, Portugal</option></select></label>
+            <label>Unidade de temperatura<select id="unit" disabled><option value="celsius">Celsius (°C)</option><option value="fahrenheit">Fahrenheit (°F)</option></select></label>
+            <label>Idioma<select id="lang" disabled><option value="pt-BR">Português (Brasil)</option><option value="en-US">English (US)</option></select></label>
+            <button id="save" class="button save" type="submit" disabled>Salvar preferências</button>
+          </form><div class="source"><span>●</span> /api/profile <span class="right">AUTH0 JWT</span></div>
+        </section>
+        <section class="panel chat"><div class="panelHead"><div><span class="overline">AGENT / TOOL CHAIN</span><h2>Conversa contextual</h2></div><span id="mode" class="pill neutral">Pronto</span></div><div id="messages" class="messages" aria-live="polite"><div class="bubble assistant">Olá! Entre com Auth0 para começar. Vou consultar suas preferências e, depois, buscar informações na Open-Meteo. ☀️</div></div><form id="chatForm" class="composer"><input id="prompt" type="text" maxlength="600" autocomplete="off" placeholder="Como está o tempo na minha cidade?" disabled aria-label="Mensagem ao assistente"/><button id="send" class="button primary" type="submit" disabled>Enviar ↗</button></form><div class="source"><span>●</span> /api/chat <span class="right">OPEN-METEO</span></div></section>
+      </div>
+      <div class="trace"><div><strong>01</strong><span>Auth0 Universal Login</span></div><i>→</i><div><strong>02</strong><span>API própria + D1</span></div><i>→</i><div><strong>03</strong><span>Open-Meteo</span></div><i>→</i><div><strong>04</strong><span>Resposta contextual</span></div></div>
+      <footer>BuilderOps • MVP 0.1 • Projeto demonstrativo • Nenhum token é enviado ao provedor de clima ou ao modelo de IA.</footer>
+    </section>
+  </main>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
