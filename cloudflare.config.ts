@@ -13,7 +13,7 @@ export default defineConfig({
     },
     env: {
       FRONTEND_ORIGIN: bindings.text("https://jrpasolini.github.io"),
-      AUTH0_DOMAIN: bindings.text("REPLACE_ME.us.auth0.com"),
+      AUTH0_DOMAIN: bindings.text("dev-1pvf63u214jb5oi8.us.auth0.com"),
       AUTH0_CLIENT_ID: bindings.text("ekrjl1rjQDtomIHm7jtVDTD1jZrSh9NG"),
       AUTH0_AUDIENCE: bindings.text("https://builderops-api.example"),
       DB: bindings.d1({ name: "builderops-db" }),
