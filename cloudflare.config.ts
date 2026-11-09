@@ -12,6 +12,7 @@ export default defineConfig({
       runWorkerFirst: ["/api/*"],
     },
     env: {
+      FRONTEND_ORIGIN: bindings.text("https://jrpasolini.github.io"),
       AUTH0_DOMAIN: bindings.text("REPLACE_ME.us.auth0.com"),
       AUTH0_CLIENT_ID: bindings.text("REPLACE_WITH_SPA_CLIENT_ID"),
       AUTH0_AUDIENCE: bindings.text("https://builderops-api.example"),

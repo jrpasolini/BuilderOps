@@ -164,8 +164,7 @@ async function history(request, env, sub) {
   ).bind(id,sub).all();
   return json({conversationId:id,messages:rows.results});
 }
-export default {
-  async fetch(request, env) {
+async function routeRequest(request, env) {
     const path = new URL(request.url).pathname;
     if (path === "/api/config" && request.method === "GET") {
       const ready = !String(env.AUTH0_CLIENT_ID || "").startsWith("REPLACE") &&
@@ -194,5 +193,32 @@ export default {
       console.error(JSON.stringify({event:"api_error",route:path,error_type:e instanceof Error?e.name:"unknown"}));
       return fail(500,"Erro interno. Verifique configuração e banco D1.");
     }
+}
+
+// Pages communicates across origins with the Worker. CORS grants reading access
+// from the configured UI origin; it does not replace Auth0 token verification.
+function corsOrigin(request, env) {
+  const origin = request.headers.get("origin");
+  return origin && origin === env.FRONTEND_ORIGIN ? origin : null;
+}
+function applyCors(response, origin) {
+  if (!origin) return response;
+  const headers = new Headers(response.headers);
+  headers.set("access-control-allow-origin", origin);
+  headers.set("vary", "Origin");
+  headers.set("access-control-allow-methods", "GET, POST, PUT, OPTIONS");
+  headers.set("access-control-allow-headers", "Authorization, Content-Type");
+  headers.set("access-control-max-age", "600");
+  return new Response(response.body, {status:response.status, statusText:response.statusText, headers});
+}
+export default {
+  async fetch(request, env) {
+    const origin = corsOrigin(request, env);
+    if (request.method === "OPTIONS") {
+      if (!origin) return new Response(null, {status:403, headers: {"cache-control":"no-store"}});
+      return applyCors(new Response(null, {status:204}), origin);
+    }
+    const response = await routeRequest(request, env);
+    return applyCors(response, origin);
   }
 };

@@ -8,6 +8,15 @@ const ui = {
   chatForm:el("chatForm"),prompt:el("prompt"),send:el("send"),messages:el("messages"),mode:el("mode")
 };
 let auth0, profile, conversationId = null, busy = false;
+const appReturnUrl = new URL(import.meta.env.BASE_URL, window.location.origin).href;
+const explicitApi = String(import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
+// Verified Cloudflare account subdomain. The Worker named 'builderops' must be deployed separately.
+const defaultApi = window.location.hostname.endsWith(".github.io")
+  ? "https://builderops.antonio-pasolini.workers.dev"
+  : window.location.origin;
+const apiBase = explicitApi || defaultApi;
+function apiUrl(path) { return new URL(path, apiBase).href; }
+
 
 function status(message) { ui.status.textContent = message; }
 function bubble(text, role="assistant") {
@@ -22,7 +31,7 @@ function enable(enabled) {
 }
 async function api(path, options={}) {
   const token=await auth0.getTokenSilently();
-  const response=await fetch(path,{
+  const response=await fetch(apiUrl(path),{
     ...options,
     headers:{
       authorization:"Bearer " + token,
@@ -55,7 +64,7 @@ async function loginState() {
 }
 async function init() {
   try {
-    const response=await fetch("/api/config",{cache:"no-store"});
+    const response=await fetch(apiUrl("/api/config"),{cache:"no-store"});
     const config=await response.json();
     if (!config.ready) {
       status("Configurar Auth0 primeiro");
@@ -66,26 +75,26 @@ async function init() {
     auth0=await createAuth0Client({
       domain:config.domain,
       clientId:config.clientId,
-      authorizationParams:{redirect_uri:window.location.origin,audience:config.audience},
+      authorizationParams:{redirect_uri:appReturnUrl,audience:config.audience},
       cacheLocation:"memory",
       useRefreshTokens:false
     });
     const search=new URLSearchParams(window.location.search);
     if (search.has("code") && search.has("state")) {
       await auth0.handleRedirectCallback();
-      window.history.replaceState({},document.title,window.location.pathname);
+      window.history.replaceState({},document.title,appReturnUrl);
     }
     ui.auth.addEventListener("click",async()=>{
       if (await auth0.isAuthenticated()) {
-        await auth0.logout({logoutParams:{returnTo:window.location.origin}});
+        await auth0.logout({logoutParams:{returnTo:appReturnUrl}});
       } else {
         await auth0.loginWithRedirect();
       }
     });
     await loginState();
   } catch(e) {
-    status("Falha no login");
-    bubble("Falha na autenticação: " + e.message);
+    status("API ou login indisponível");
+    bubble("Não foi possível iniciar o assistente. Confira o Worker e a configuração Auth0. Detalhe: " + e.message);
   }
 }
 ui.form.addEventListener("submit",async(e)=>{
