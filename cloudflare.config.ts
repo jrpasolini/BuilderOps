@@ -16,8 +16,8 @@ export default defineConfig({
       AUTH0_CLIENT_ID: bindings.text("REPLACE_WITH_SPA_CLIENT_ID"),
       AUTH0_AUDIENCE: bindings.text("https://builderops-api.example"),
       DB: bindings.d1({ name: "builderops-db" }),
-      LLM_API_KEY: bindings.secret(),
-      LLM_MODEL: bindings.text("deepseek-chat"),
+      AI: bindings.ai(),
+      AI_MODEL: bindings.text("@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"),
     },
     observability: {
       enabled: true,

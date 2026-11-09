@@ -116,7 +116,7 @@ ui.chatForm.addEventListener("submit",async(e)=>{
       method:"POST",body:JSON.stringify({message,conversationId})
     });
     conversationId=result.conversationId;
-    ui.mode.textContent=result.mode==="llm" ? "DeepSeek + tools" : "Fluxo verificado";
+    ui.mode.textContent=result.mode==="workers-ai" ? "Workers AI · DeepSeek R1" : "Fluxo verificado";
     bubble(result.answer);
   } catch(e) { bubble("Não foi possível responder: " + e.message); }
   finally { busy=false; ui.send.disabled=false; ui.prompt.focus(); }

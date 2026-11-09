@@ -32,10 +32,10 @@
             <button id="save" class="button save" type="submit" disabled>Salvar preferências</button>
           </form><div class="source"><span>●</span> /api/profile <span class="right">AUTH0 JWT</span></div>
         </section>
-        <section class="panel chat"><div class="panelHead"><div><span class="overline">AGENT / TOOL CHAIN</span><h2>Conversa contextual</h2></div><span id="mode" class="pill neutral">Pronto</span></div><div id="messages" class="messages" aria-live="polite"><div class="bubble assistant">Olá! Entre com Auth0 para começar. Vou consultar suas preferências e, depois, buscar informações na Open-Meteo. ☀️</div></div><form id="chatForm" class="composer"><input id="prompt" type="text" maxlength="600" autocomplete="off" placeholder="Como está o tempo na minha cidade?" disabled aria-label="Mensagem ao assistente"/><button id="send" class="button primary" type="submit" disabled>Enviar ↗</button></form><div class="source"><span>●</span> /api/chat <span class="right">OPEN-METEO</span></div></section>
+        <section class="panel chat"><div class="panelHead"><div><span class="overline">AGENT / TOOL CHAIN</span><h2>Conversa contextual</h2></div><span id="mode" class="pill neutral">Pronto</span></div><div id="messages" class="messages" aria-live="polite"><div class="bubble assistant">Olá! Entre com Auth0 para começar. Vou consultar suas preferências e, depois, buscar informações na Open-Meteo. ☀️</div></div><form id="chatForm" class="composer"><input id="prompt" type="text" maxlength="600" autocomplete="off" placeholder="Como está o tempo na minha cidade?" disabled aria-label="Mensagem ao assistente"/><button id="send" class="button primary" type="submit" disabled>Enviar ↗</button></form><div class="source"><span>●</span> /api/chat <span class="right">OPEN-METEO · WORKERS AI</span></div></section>
       </div>
       <div class="trace"><div><strong>01</strong><span>Auth0 Universal Login</span></div><i>→</i><div><strong>02</strong><span>API própria + D1</span></div><i>→</i><div><strong>03</strong><span>Open-Meteo</span></div><i>→</i><div><strong>04</strong><span>Resposta contextual</span></div></div>
-      <footer>BuilderOps • MVP 0.1 • Projeto demonstrativo • Nenhum token é enviado ao provedor de clima ou ao modelo de IA.</footer>
+      <footer>BuilderOps • MVP 0.1 • Projeto demonstrativo • Nenhum token Auth0 é enviado ao provedor de clima ou ao modelo de IA.</footer>
     </section>
   </main>
 </div>
