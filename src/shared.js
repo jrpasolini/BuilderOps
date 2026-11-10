@@ -22,6 +22,8 @@ export function weatherUrl(profile) {
   for (const [k, v] of Object.entries({
     latitude: city.latitude, longitude: city.longitude,
     current: "temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m",
+    daily: "temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code",
+    forecast_days: 2,
     temperature_unit: profile.temperature_unit, timezone: city.timezone
   })) url.searchParams.set(k, String(v));
   return url;
@@ -33,6 +35,17 @@ export function formatWeather(profile, weather) {
   if (typeof c?.temperature_2m !== "number" || typeof c?.relative_humidity_2m !== "number") {
     throw new Error("Unexpected weather response");
   }
-  if (profile.response_language === "en-US") return "Your saved city is " + name + ". Open-Meteo reports " + c.temperature_2m + unit + ", humidity " + c.relative_humidity_2m + "% and wind " + c.wind_speed_10m + " km/h.";
-  return "Sua cidade preferida é " + name + ". A Open-Meteo informa " + c.temperature_2m + unit + ", umidade " + c.relative_humidity_2m + "% e vento de " + c.wind_speed_10m + " km/h.";
+  const d = weather?.daily;
+  let forecast = "";
+  if (d && Array.isArray(d.time) && d.time.length > 1) {
+    const max = d.temperature_2m_max?.[1], min = d.temperature_2m_min?.[1], rain = d.precipitation_probability_max?.[1];
+    if (typeof max === "number" && typeof min === "number") {
+      const rainTxt = typeof rain === "number" ? rain + "%" : null;
+      forecast = profile.response_language === "en-US"
+        ? " Tomorrow: high " + max + unit + ", low " + min + unit + (rainTxt ? " and " + rainTxt + " chance of rain." : ".")
+        : " Amanhã: máxima de " + max + unit + ", mínima de " + min + unit + (rainTxt ? " e " + rainTxt + " de chance de chuva." : ".");
+    }
+  }
+  if (profile.response_language === "en-US") return "Your saved city is " + name + ". Open-Meteo reports " + c.temperature_2m + unit + ", humidity " + c.relative_humidity_2m + "% and wind " + c.wind_speed_10m + " km/h." + forecast;
+  return "Sua cidade preferida é " + name + ". A Open-Meteo informa " + c.temperature_2m + unit + ", umidade " + c.relative_humidity_2m + "% e vento de " + c.wind_speed_10m + " km/h." + forecast;
 }
