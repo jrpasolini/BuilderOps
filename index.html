@@ -30,7 +30,10 @@
             <label>Unidade de temperatura<select id="unit" disabled><option value="celsius">Celsius (°C)</option><option value="fahrenheit">Fahrenheit (°F)</option></select></label>
             <label>Idioma<select id="lang" disabled><option value="pt-BR">Português (Brasil)</option><option value="en-US">English (US)</option></select></label>
             <button id="save" class="button save" type="submit" disabled>Salvar preferências</button>
-          </form><div class="source"><span>●</span> /api/profile <span class="right">AUTH0 JWT</span></div>
+          </form>
+          <button id="connectCalendar" class="button save" type="button" hidden>Conectar Google Calendar</button>
+          <p id="calendarHint" class="calendarHint" hidden>Com a agenda ligada, os comandos começam pela palavra-chave: agenda, criar lembrete de chuva, reagendar 1 para AAAA-MM-DDTHH:MM ou status da aprovação. Gravações esperam aprovação fora do chat.</p>
+          <div class="source"><span>●</span> /api/profile <span class="right">AUTH0 JWT</span></div>
         </section>
         <section class="panel chat"><div class="panelHead"><div><span class="overline">AGENT / TOOL CHAIN</span><h2>Conversa contextual</h2></div><span id="mode" class="pill neutral">Pronto</span></div><div id="messages" class="messages" aria-live="polite"><div class="bubble assistant">Olá! Entre com Auth0 para começar. Vou consultar suas preferências e, depois, buscar informações na Open-Meteo. ☀️</div></div><form id="chatForm" class="composer"><input id="prompt" type="text" maxlength="600" autocomplete="off" placeholder="Como está o tempo na minha cidade?" disabled aria-label="Mensagem ao assistente"/><button id="send" class="button primary" type="submit" disabled>Enviar ↗</button></form><div class="source"><span>●</span> /api/chat <span class="right">OPEN-METEO · WORKERS AI</span></div></section>
       </div>

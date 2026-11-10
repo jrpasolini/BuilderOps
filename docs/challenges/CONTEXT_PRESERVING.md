@@ -54,4 +54,4 @@ Still open, so those boxes stay unchecked: a preference change continued in the 
 - Tiger Data activity hypertables and analytics.
 - Vector search over synthetic documents with authorization checks.
 - Auth0 FGA policy-controlled retrieval.
-- Optional Token Vault/CIBA after verifying tenant access and challenge constraints.
+- The Veto Agent (Token Vault + CIBA) is a separate challenge. It stays off until its secrets exist. See `docs/challenges/VETO_AGENT.md`.

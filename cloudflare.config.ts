@@ -19,6 +19,12 @@ export default defineConfig({
       DB: bindings.d1({ name: "builderops-db" }),
       AI: bindings.ai(),
       AI_MODEL: bindings.text("@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"),
+      // Public switches only. Token Vault and CIBA client secrets stay out of
+      // this file; bindings.secret() would mark them required and can block a
+      // deploy of the existing assistant before the owner creates them.
+      VETO_AGENT: bindings.text("auto"),
+      AUTH0_CIBA_CHANNEL: bindings.text("guardian"),
+      AUTH0_GOOGLE_CONNECTION: bindings.text("google-oauth2"),
     },
     observability: {
       enabled: true,

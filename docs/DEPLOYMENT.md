@@ -43,6 +43,16 @@ The browser supplies a Bearer access token only to the BuilderOps Worker API. Th
 
 Before real-world use, add rate limits and retention/deletion controls. The initial project is a public demonstration using non-sensitive preferences.
 
+## Veto Agent secrets
+
+Calendar reads and CIBA-gated writes are inert until four Worker secrets exist: `AUTH0_VAULT_CLIENT_ID`, `AUTH0_VAULT_CLIENT_SECRET`, `AUTH0_CIBA_CLIENT_ID` and `AUTH0_CIBA_CLIENT_SECRET`. Do not put those values in `cloudflare.config.ts` or in Git. `GET /api/config` reports `veto: true` only when they are present and well formed, and the response must not contain them.
+
+The public switches `VETO_AGENT`, `AUTH0_CIBA_CHANNEL` and `AUTH0_GOOGLE_CONNECTION` have safe defaults in `cloudflare.config.ts`. `VETO_AGENT=off` disables the feature even if the secrets exist. Changing the channel from `guardian` to `email` is a config edit and a redeploy.
+
+The Worker creates `calendar_snapshots` and `calendar_approvals` on first use (`db/002_veto.sql`). Those tables store event ids and the CIBA `auth_req_id`. They must not store Google tokens. The existing profile and chat tables are unchanged, and the weather flow does not touch the new tables while the feature is off.
+
+Full Portuguese setup and the paid-plan warnings: `docs/challenges/VETO_AGENT.md`.
+
 ## Test checklist
 
 1. GitHub Actions: verify successful `Publish BuilderOps frontend` run and deployed static artifact.

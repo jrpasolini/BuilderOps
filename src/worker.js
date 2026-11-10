@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { CITIES, DEFAULT_PROFILE, validSettings, weatherUrl, formatWeather } from "./shared.js";
+import { isCalendarCommand, pollCalendarApproval, processCalendarTurn, vetoPublicConfig } from "./veto.js";
 
 const responseHeaders = {
   "content-type": "application/json; charset=utf-8",
@@ -121,6 +122,7 @@ async function chat(request, env, sub) {
     await env.DB.prepare("INSERT INTO conversations (id,user_sub) VALUES (?,?)").bind(id,sub).run();
   }
   const profile = await firstPartyProfile(env,sub);
+  if (isCalendarCommand(question)) return calendarTurn(request, env, sub, id, profile, question);
   const previous = await env.DB.prepare(
     "SELECT role,content FROM messages WHERE user_sub=? AND conversation_id=? " +
     "ORDER BY created_at DESC,rowid DESC LIMIT 8"
@@ -155,6 +157,70 @@ async function chat(request, env, sub) {
   ).bind(id,sub).run();
   return json({conversationId:id,answer,mode,profileUsed:profile,thirdParty:tool?"Open-Meteo":"unavailable"});
 }
+function bearerToken(request) {
+  const header = request.headers.get("authorization") || "";
+  return header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+}
+async function rememberAssistant(env, sub, conversationId, answer) {
+  await env.DB.prepare(
+    "INSERT INTO messages (id,conversation_id,user_sub,role,content) VALUES (?,?,?,?,?)"
+  ).bind(crypto.randomUUID(), conversationId, sub, "assistant", answer).run();
+  await env.DB.prepare(
+    "UPDATE conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_sub=?"
+  ).bind(conversationId, sub).run();
+}
+async function calendarTurn(request, env, sub, id, profile, question) {
+  await env.DB.prepare(
+    "INSERT INTO messages (id,conversation_id,user_sub,role,content) VALUES (?,?,?,?,?)"
+  ).bind(crypto.randomUUID(), id, sub, "user", question).run();
+  let outcome;
+  try {
+    outcome = await processCalendarTurn({
+      env, sub, bearer: bearerToken(request), profile, question, conversationId: id, fetchImpl: fetch
+    });
+  } catch (error) {
+    console.error(JSON.stringify({event:"calendar_error", code: error instanceof Error ? error.code || error.name : "unknown"}));
+    outcome = {
+      answer: profile.response_language === "en-US"
+        ? "The calendar agent hit an internal error. Your Google Calendar was not changed."
+        : "O agente de agenda encontrou um erro interno. O Google Calendar não foi alterado.",
+      mode: "calendar-error",
+      thirdParty: "unavailable",
+      approval: null
+    };
+  }
+  await rememberAssistant(env, sub, id, outcome.answer);
+  const body = {
+    conversationId: id,
+    answer: outcome.answer,
+    mode: outcome.mode,
+    profileUsed: profile,
+    thirdParty: outcome.thirdParty
+  };
+  if (outcome.approval) body.approval = outcome.approval;
+  return json(body);
+}
+async function pollRoute(request, env, sub, path) {
+  const id = path.slice("/api/calendar/approvals/".length);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return fail(400, "ID inválido");
+  const profile = await firstPartyProfile(env, sub);
+  let result;
+  try {
+    result = await pollCalendarApproval({
+      env, sub, bearer: bearerToken(request), profile, approvalId: id, fetchImpl: fetch
+    });
+  } catch (error) {
+    console.error(JSON.stringify({event:"calendar_poll_error", code: error instanceof Error ? error.code || error.name : "unknown"}));
+    return fail(500, "Erro interno. Verifique configuração e banco D1.");
+  }
+  if (result.persist?.answer && result.persist.conversationId) {
+    try { await rememberAssistant(env, sub, result.persist.conversationId, result.persist.answer); }
+    catch (error) {
+      console.error(JSON.stringify({event:"calendar_persist_error", code: error instanceof Error ? error.name : "unknown"}));
+    }
+  }
+  return json(result.body, result.httpStatus);
+}
 async function history(request, env, sub) {
   const id = new URL(request.url).searchParams.get("id") || "";
   if (!/^[0-9a-f-]{36}$/i.test(id)) return fail(400,"ID inválido");
@@ -173,7 +239,10 @@ async function routeRequest(request, env) {
       const ready = !String(env.AUTH0_CLIENT_ID || "").startsWith("REPLACE") &&
         !String(env.AUTH0_DOMAIN || "").startsWith("REPLACE") &&
         !String(env.AUTH0_AUDIENCE || "").includes("example");
-      return json({domain:env.AUTH0_DOMAIN,clientId:env.AUTH0_CLIENT_ID,audience:env.AUTH0_AUDIENCE,ready});
+      const veto = vetoPublicConfig(env);
+      const body = {domain:env.AUTH0_DOMAIN,clientId:env.AUTH0_CLIENT_ID,audience:env.AUTH0_AUDIENCE,ready,veto:veto.enabled};
+      if (veto.enabled) body.googleConnection = veto.connection;
+      return json(body);
     }
     if (path === "/api/health" && request.method === "GET") {
       return json({ok:true,service:"builderops",version:"0.1.0"});
@@ -190,6 +259,7 @@ async function routeRequest(request, env) {
       if (path === "/api/profile" && request.method === "GET") return json(await firstPartyProfile(env,sub));
       if (path === "/api/profile" && request.method === "PUT") return updateProfile(request,env,sub);
       if (path === "/api/chat" && request.method === "POST") return chat(request,env,sub);
+      if (path.startsWith("/api/calendar/approvals/") && request.method === "POST") return pollRoute(request,env,sub,path);
       if (path === "/api/history" && request.method === "GET") return history(request,env,sub);
       return fail(404,"Rota não encontrada");
     } catch(e) {

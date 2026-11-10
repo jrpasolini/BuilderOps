@@ -8,11 +8,11 @@
     "dev": "cf dev",
     "build": "cf build",
     "deploy": "cf deploy",
-    "check": "node --check src/worker.js && node --check src/main.js && node --test tests/*.test.js",
+    "check": "node --check src/worker.js && node --check src/veto.js && node --check src/main.js && node --test tests/*.test.js",
     "build:pages": "vite build --config vite.pages.config.ts"
   },
   "dependencies": {
-    "@auth0/auth0-spa-js": "^2.3.0",
+    "@auth0/auth0-spa-js": "^2.7.0",
     "jose": "^6.0.0"
   },
   "devDependencies": {
