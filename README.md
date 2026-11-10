@@ -70,6 +70,54 @@ Without a token on that Worker, `GET /api/health` returned 200, `GET /api/config
 
 ![Authenticated BuilderOps session: Vitória, ES preferences and an Open-Meteo weather answer in the same chat](docs/assets/builderops-demo.png)
 
+## Veto Agent
+
+Second MLH challenge, same repository: an assistant that can read the signed-in user's Google Calendar and must stop for out-of-band approval before it writes. The weather assistant above is unchanged when the new secrets are absent. `GET /api/config` then returns `veto: false`, the calendar button stays hidden, and the SPA keeps its original Auth0 options (memory cache, no refresh token, no DPoP).
+
+### Architecture
+
+```text
+Browser (GitHub Pages, Auth0 SPA SDK)
+  |  Bearer JWT for https://builderops-api
+  |  -- calendar connect, only when veto is on --
+  |  My Account API + DPoP/MRRT -> Google consent -> tokens stay in Token Vault
+  v
+Cloudflare Worker (JWT via Auth0 JWKS, subject from the token only)
+  |-- weather question --> D1 profile + Open-Meteo + Workers AI     (existing path)
+  |-- "agenda" ----------> Token Vault access-token exchange
+  |                         -> Google Calendar events.list
+  |                         -> Open-Meteo daily forecast for that date
+  |-- write command -----> POST /bc-authorize (CIBA) and STOP
+  |                         browser polls POST /api/calendar/approvals/:id
+  |                         Worker polls POST /oauth/token (poll mode)
+  |                         approved -> Token Vault exchange -> Calendar insert/patch
+  |                         denied, expired, or timeout -> no Google write
+  v
+D1 stores profile, chat, event ids, and the CIBA auth_req_id.
+Google access tokens are not stored in D1, logs, or the chat payload.
+```
+
+Reads are explicit commands (`agenda`), not a model tool. Writes (`criar lembrete de chuva`, `reagendar N para AAAA-MM-DDTHH:MM`) are parsed in the Worker and cannot be triggered by the language model. Open-Meteo `forecast_days` maxes at 16, with today as day 0, so the last forecast date is 15 days ahead. Later or past dates are explained and are not written.
+
+Auth0's published CIBA flow is **poll** mode: this Worker polls `/oauth/token`. Guardian "push" is the notification on the user's phone, not a callback into the Worker. A documented ping/push callback for the consumption device was not found.
+
+The Worker calls Auth0 and Google with `fetch`. It does not use `@auth0/ai` or `googleapis`, which are Node-oriented. Research, paid-plan limits, and the setup checklist: `docs/challenges/VETO_AGENT.md`.
+
+### Checklist de configuração (português)
+
+Fontes, limites de plano e incertezas: `docs/challenges/VETO_AGENT.md`. Não cole segredo no Git. Tenant: `dev-1pvf63u214jb5oi8.us.auth0.com`. API: `https://builderops-api`. Callback: `https://jrpasolini.github.io/BuilderOps/`.
+
+**Pago, antes de prometer a demo.** CIBA não existe no plano Free. Push do Guardian: Enterprise ou add-on. E-mail de CIBA: add-on Auth0 for AI Agents em plano pago. Token Vault aparece no Free com uma cota numérica; a página de preço não diz o que o número conta.
+
+1. **Google Cloud.** Ative a Google Calendar API. Em Branding, domínio autorizado `auth0.com`. Audience External e adicione o Gmail de teste. Em Data Access, inclua `openid`, `https://www.googleapis.com/auth/userinfo.email`, `https://www.googleapis.com/auth/userinfo.profile` e o escopo sensível `https://www.googleapis.com/auth/calendar.events`. Crie um cliente OAuth **Web** com origem `https://dev-1pvf63u214jb5oi8.us.auth0.com` e redirect `https://dev-1pvf63u214jb5oi8.us.auth0.com/login/callback`.
+2. **Conexão Google na Auth0.** Authentication > Social > Google/Gmail. Cole o client id e o secret do Google. Ligue **Connected Accounts for Token Vault** e **Offline Access**. Não desligue o login do outro desafio. Habilite essa conexão no SPA. O nome deve ser `google-oauth2`.
+3. **My Account API.** Ative a API. No SPA, User Access Authorized e os escopos `create:me:connected_accounts`, `read:me:connected_accounts`, `delete:me:connected_accounts`. Ligue MRRT para essa API e o grant Refresh Token no SPA. Allow Skipping User Consent, se a tela pedir. Isto só muda o login quando `veto` está ligado: o SDK passa a usar refresh token, MRRT e DPoP. Saia e entre de novo.
+4. **Custom API Client.** Na API `https://builderops-api`, Add Application (tipo Custom API Client) com o grant Token Vault. Copie id e secret para `AUTH0_VAULT_CLIENT_ID` e `AUTH0_VAULT_CLIENT_SECRET`.
+5. **CIBA.** Crie um Regular Web Application confidencial com o grant CIBA e o canal `guardian-push` (ou `email`, se o add-on existir). Copie id e secret para `AUTH0_CIBA_CLIENT_ID` e `AUTH0_CIBA_CLIENT_SECRET`. Se o dashboard não deixar os dois grants no mesmo cliente, use dois clientes.
+6. **Guardian.** Security > Multi-factor Auth > Push Notification com o app Auth0 Guardian. Inscreva o usuário (pode ligar MFA Always só para o QR code). **Volte a política para Never** antes de testar a agenda: a documentação do Token Vault diz que Always quebra a troca do token. Para e-mail, ative o template Asynchronous Approval, use um e-mail verificado, e troque `AUTH0_CIBA_CHANNEL` para `email` com um novo deploy.
+7. **Segredos do Worker `builderops`.** Cadastre os quatro nomes do passo 4 e do passo 5 como secrets. Não use `bindings.secret()` no config antes disso: o deploy do assistente atual não deve passar a exigir segredo. `VETO_AGENT=off` desliga a função. Abra `/api/config` e confira `"veto": true` sem nenhum secret no JSON. Se continuar `false`, o checklist do doc explica quando declarar `bindings.secret()`.
+8. **Prova.** Entre em https://jrpasolini.github.io/BuilderOps/, conecte o Google Calendar, envie `agenda`, depois `criar lembrete de chuva` ou `reagendar 1 para AAAA-MM-DDTHH:MM`. O evento só muda depois da aprovação no Guardian ou no e-mail. Recusa ou timeout cancela. `Como está o tempo na minha cidade?` continua no fluxo antigo. Data além de 16 dias da Open-Meteo (hoje é o dia 0) não grava e não pede CIBA.
+
 ## Security notes
 
 - JWT signature, issuer, audience and expiration are verified server-side using Auth0 JWKS; identities are not accepted from client input.
@@ -82,7 +130,7 @@ Without a token on that Worker, `GET /api/health` returned 200, `GET /api/config
 
 ## Roadmap
 
-Tiger Data hypertables → streaming dashboard → vector search → Auth0 FGA + permission-aware RAG. Advanced Token Vault/CIBA remains optional.
+Tiger Data hypertables → streaming dashboard → vector search → Auth0 FGA + permission-aware RAG. Google Calendar with Auth0 Token Vault and CIBA is implemented behind a flag. See `docs/challenges/VETO_AGENT.md`. It does not run until the owner sets the Worker secrets.
 
 ## License
 

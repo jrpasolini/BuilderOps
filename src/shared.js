@@ -15,6 +15,49 @@ export function validSettings(value) {
     ["celsius", "fahrenheit"].includes(value.temperature_unit) &&
     ["pt-BR", "en-US"].includes(value.response_language));
 }
+// Open-Meteo accepts forecast_days 1–16 and the first daily entry is today.
+export const OPEN_METEO_FORECAST_DAYS = 16;
+export function isoDateInTimeZone(date, timeZone) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone, year: "numeric", month: "2-digit", day: "2-digit"
+  }).format(date);
+}
+export function addIsoDays(isoDate, days) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate) || !Number.isInteger(days)) return null;
+  const parsed = Date.parse(isoDate + "T00:00:00Z");
+  if (Number.isNaN(parsed)) return null;
+  return new Date(parsed + days * 86400000).toISOString().slice(0, 10);
+}
+export function daysBetweenIsoDates(todayIso, targetIso) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(todayIso) || !/^\d{4}-\d{2}-\d{2}$/.test(targetIso)) return null;
+  const start = Date.parse(todayIso + "T00:00:00Z");
+  const end = Date.parse(targetIso + "T00:00:00Z");
+  if (Number.isNaN(start) || Number.isNaN(end)) return null;
+  return Math.round((end - start) / 86400000);
+}
+export function forecastReach(todayIso, targetIso) {
+  const offset = daysBetweenIsoDates(todayIso, targetIso);
+  if (offset === null) return {offset: null, status: "invalid"};
+  if (offset < 0) return {offset, status: "past"};
+  if (offset >= OPEN_METEO_FORECAST_DAYS) return {offset, status: "beyond"};
+  return {offset, status: "ok"};
+}
+export function forecastUrl(profile, forecastDays) {
+  const city = CITIES[profile.preferred_city];
+  if (!city || !validSettings(profile)) throw new Error("Invalid profile");
+  const days = Number(forecastDays);
+  if (!Number.isInteger(days) || days < 1 || days > OPEN_METEO_FORECAST_DAYS) {
+    throw new Error("Invalid forecast window");
+  }
+  const url = new URL("https://api.open-meteo.com/v1/forecast");
+  for (const [k, v] of Object.entries({
+    latitude: city.latitude, longitude: city.longitude,
+    daily: "temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code",
+    forecast_days: days,
+    temperature_unit: profile.temperature_unit, timezone: city.timezone
+  })) url.searchParams.set(k, String(v));
+  return url;
+}
 export function weatherUrl(profile) {
   const city = CITIES[profile.preferred_city];
   if (!city || !validSettings(profile)) throw new Error("Invalid profile");
