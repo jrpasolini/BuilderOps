@@ -4,7 +4,7 @@
 
 BuilderOps is an identity-aware chat assistant designed to demonstrate user-specific context surviving across an authenticated first-party API and an external third-party API. The project is structured so additional MLH challenges (Tiger Data event analytics, vector search and Auth0 FGA) can be added later.
 
-**Current status (2026-11-09):** GitHub Pages frontend deployed; Cloudflare Worker `builderops` uploaded and enabled at `https://builderops.antonio-pasolini.workers.dev`; Cloudflare D1 database `builderops-db` initialized. The Auth0 callback settings were saved by the account owner, but a real Auth0 login and authenticated Workers AI inference have **not yet been tested end-to-end**.
+**Current status (2026-11-09):** GitHub Pages frontend deployed at `https://jrpasolini.github.io/BuilderOps/`; Cloudflare Worker `builderops` uploaded and enabled at `https://builderops.antonio-pasolini.workers.dev`; Cloudflare D1 database `builderops-db` initialized. A real Auth0 login and the authenticated end-to-end flow were verified the same day: Universal Login, first-party `GET /api/profile`, and an Open-Meteo answer via Workers AI chat.
 
 ## Architecture
 
@@ -53,6 +53,22 @@ The project uses Cloudflare's beta `cf` CLI and `cloudflare.config.ts`. Check th
 7. Capture screenshots and submit the repository URL.
 
 Full acceptance checklist: `docs/challenges/CONTEXT_PRESERVING.md`.
+
+## Demo / Verification
+
+Verified on 2026-11-09, about 21:50 America/Sao_Paulo, on the live GitHub Pages frontend and the Worker above. One authenticated conversation covered the three challenge goals:
+
+| Challenge goal | What this run showed |
+|---|---|
+| Initial user authentication | Auth0 Universal Login. The header showed **Sessão autenticada**. |
+| User-specific setting from a first-party API | `GET /api/profile` with the Auth0 JWT. The D1 row is keyed by the validated `sub`. Loaded city Vitória, ES, unit Celsius and language Português (Brasil). The chat showed “Perfil carregado: Vitória, ES.” |
+| Third-party task in the same conversation | The user asked “Como está o tempo na minha cidade?”. `POST /api/chat` answered with Open-Meteo for that saved city through Workers AI: 19,6°C, 91% relative humidity, light rain, wind 11,2 km/h, and a next-day forecast (max 22,9°C, min 18,7°C, 96% chance of rain, overcast). Source: Open-Meteo. |
+
+Auth0 Token Vault is not required. Open-Meteo is a public, keyless API, so there is no third-party credential to store or exchange. The Worker forwards no Auth0 access token to Open-Meteo or to Workers AI. Open-Meteo receives coordinates and units; Workers AI receives the profile preferences, the weather reading and recent conversation content.
+
+Without a token on that Worker, `GET /api/health` returned 200, `GET /api/config` reported `ready: true`, and `GET /api/profile` returned 401.
+
+![Authenticated BuilderOps session: Vitória, ES preferences and an Open-Meteo weather answer in the same chat](docs/assets/builderops-demo.png)
 
 ## Security notes
 
