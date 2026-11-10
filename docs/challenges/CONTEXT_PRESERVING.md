@@ -4,15 +4,15 @@ Official challenge: https://www.mlh.com/events/global-hack-week-builders-week/ch
 
 ## Evidence / acceptance checklist
 
-- [ ] Real Auth0 Universal Login works and produces a token for the BuilderOps API audience.
-- [ ] The custom first-party `GET /api/profile` returns only the current user's saved preferences.
-- [ ] The assistant reads the preferences under the authenticated subject.
-- [ ] Open-Meteo is called through the Worker as a third-party API.
-- [ ] Cloudflare Workers AI answers using the authenticated preferences and the external weather reading.
+- [x] Real Auth0 Universal Login works and produces a token for the BuilderOps API audience.
+- [x] The custom first-party `GET /api/profile` returns only the current user's saved preferences.
+- [x] The assistant reads the preferences under the authenticated subject.
+- [x] Open-Meteo is called through the Worker as a third-party API.
+- [x] Cloudflare Workers AI answers using the authenticated preferences and the external weather reading.
 - [ ] The same conversation retains identity, history and newly saved preferences.
 - [ ] User B cannot read or modify user A's profile and conversations.
 - [ ] Unauthenticated and invalid JWT requests to `/api/profile` return 401.
-- [ ] Capture screenshots of authentication, saved preferences, multi-turn conversation, and evidence of tool/API usage.
+- [x] Capture screenshots of authentication, saved preferences, multi-turn conversation, and evidence of tool/API usage.
 - [ ] Publish source and submit the GitHub repository URL to MLH.
 
 ## Suggested live walkthrough
@@ -36,9 +36,18 @@ Official challenge: https://www.mlh.com/events/global-hack-week-builders-week/ch
 
 ## Model and deployment status
 
-Cloudflare DeepSeek R1 Distill Qwen 32B planned model deprecation: **2026-11-20**. The model is currently specified as a configurable binding; test actual inference before submitting.
+Cloudflare DeepSeek R1 Distill Qwen 32B planned model deprecation: **2026-11-20**. The model is currently specified as a configurable binding. The 2026-11-09 live chat used this Workers AI model.
 
-The repository contains an initial implementation; deployment, production D1, real Auth0 login and end-to-end test **remain pending**, so no box above is pre-checked.
+**Verified on 2026-11-09** (about 21:50 America/Sao_Paulo) at `https://jrpasolini.github.io/BuilderOps/` with the Worker `https://builderops.antonio-pasolini.workers.dev`:
+
+- Auth0 Universal Login completed. The header showed **Sessão autenticada**.
+- `GET /api/profile` with the Auth0 JWT loaded the D1 profile for the validated `sub`: Vitória, ES; Celsius; Português (Brasil). The chat showed “Perfil carregado: Vitória, ES.”
+- In that same conversation, “Como está o tempo na minha cidade?” was answered by `/api/chat` with Open-Meteo for the saved city through Workers AI (19,6°C, 91% relative humidity, light rain, wind 11,2 km/h, next-day max 22,9°C / min 18,7°C, 96% chance of rain).
+- Without a token: `GET /api/health` returned 200, `GET /api/config` reported `ready: true`, and `GET /api/profile` returned 401.
+
+Screenshot: [`docs/assets/builderops-demo.png`](../assets/builderops-demo.png).
+
+Still open, so those boxes stay unchecked: a preference change continued in the same conversation, user B isolation, a request with an invalid JWT (the 401 above was a missing token), and submitting the repository URL to MLH.
 
 ## Future integrations
 
