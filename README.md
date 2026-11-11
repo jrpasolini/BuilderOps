@@ -2,9 +2,9 @@
 
 **MLH Global Hack Week — Builders Week 2026**
 
-BuilderOps is an identity-aware chat assistant designed to demonstrate user-specific context surviving across an authenticated first-party API and an external third-party API. The project is structured so additional MLH challenges (Tiger Data event analytics, vector search and Auth0 FGA) can be added later.
+BuilderOps is an identity-aware chat assistant designed to demonstrate user-specific context surviving across an authenticated first-party API and an external third-party API. The Veto Agent is now included. The project is structured so additional MLH challenges (Tiger Data event analytics, vector search and Auth0 FGA) can be added later.
 
-**Current status (2026-11-09):** GitHub Pages frontend deployed at `https://jrpasolini.github.io/BuilderOps/`; Cloudflare Worker `builderops` uploaded and enabled at `https://builderops.antonio-pasolini.workers.dev`; Cloudflare D1 database `builderops-db` initialized. A real Auth0 login and the authenticated end-to-end flow were verified the same day: Universal Login, first-party `GET /api/profile`, and an Open-Meteo answer via Workers AI chat.
+**Current status (2026-11-10):** GitHub Pages frontend deployed at `https://jrpasolini.github.io/BuilderOps/`; Cloudflare Worker `builderops` uploaded and enabled at `https://builderops.antonio-pasolini.workers.dev`; Cloudflare D1 database `builderops-db` initialized. Both MLH challenges are live on that site and were submitted on 2026-11-10: Context-Preserving and The Veto Agent. Context-Preserving was verified with Auth0 Universal Login, first-party `GET /api/profile`, and an Open-Meteo answer via Workers AI chat. The Veto Agent has the Worker secrets set (`GET /api/config` returns `veto: true`). Google Calendar is connected through Token Vault. A CIBA Guardian push approval created "Alerta de chuva" events on 2026-11-11 and 2026-11-12. A denial on 2026-11-13 changed nothing.
 
 ## Architecture
 
@@ -112,9 +112,9 @@ Fontes, limites de plano e incertezas: `docs/challenges/VETO_AGENT.md`. Não col
 1. **Google Cloud.** Ative a Google Calendar API. Em Branding, domínio autorizado `auth0.com`. Audience External e adicione o Gmail de teste. Em Data Access, inclua `openid`, `https://www.googleapis.com/auth/userinfo.email`, `https://www.googleapis.com/auth/userinfo.profile` e o escopo sensível `https://www.googleapis.com/auth/calendar.events`. Crie um cliente OAuth **Web** com origem `https://dev-1pvf63u214jb5oi8.us.auth0.com` e redirect `https://dev-1pvf63u214jb5oi8.us.auth0.com/login/callback`.
 2. **Conexão Google na Auth0.** Authentication > Social > Google/Gmail. Cole o client id e o secret do Google. Ligue **Connected Accounts for Token Vault** e **Offline Access**. Não desligue o login do outro desafio. Habilite essa conexão no SPA. O nome deve ser `google-oauth2`.
 3. **My Account API.** Ative a API. No SPA, User Access Authorized e os escopos `create:me:connected_accounts`, `read:me:connected_accounts`, `delete:me:connected_accounts`. Ligue MRRT para essa API e o grant Refresh Token no SPA. Allow Skipping User Consent, se a tela pedir. Isto só muda o login quando `veto` está ligado: o SDK passa a usar refresh token, MRRT e DPoP. Saia e entre de novo.
-4. **Custom API Client.** Na API `https://builderops-api`, Add Application (tipo Custom API Client) com o grant Token Vault. Copie id e secret para `AUTH0_VAULT_CLIENT_ID` e `AUTH0_VAULT_CLIENT_SECRET`.
+4. **Custom API Client.** Na API `https://builderops-api`, ligue **Allow Offline Access**. Sem isso o SDK falha com "Missing Refresh Token". Add Application (tipo Custom API Client) com o grant Token Vault. Copie id e secret para `AUTH0_VAULT_CLIENT_ID` e `AUTH0_VAULT_CLIENT_SECRET`.
 5. **CIBA.** Crie um Regular Web Application confidencial com o grant CIBA e o canal `guardian-push` (ou `email`, se o add-on existir). Copie id e secret para `AUTH0_CIBA_CLIENT_ID` e `AUTH0_CIBA_CLIENT_SECRET`. Se o dashboard não deixar os dois grants no mesmo cliente, use dois clientes.
-6. **Guardian.** Security > Multi-factor Auth > Push Notification com o app Auth0 Guardian. Inscreva o usuário (pode ligar MFA Always só para o QR code). **Volte a política para Never** antes de testar a agenda: a documentação do Token Vault diz que Always quebra a troca do token. Para e-mail, ative o template Asynchronous Approval, use um e-mail verificado, e troque `AUTH0_CIBA_CHANNEL` para `email` com um novo deploy.
+6. **Guardian.** Security > Multi-factor Auth > Push Notification com o app Auth0 Guardian. Inscreva o usuário. Mantenha a política de MFA em **Always**: a My Account API exige 2FA, e com **Never** ela respondeu "Multifactor authentication required". A documentação do Token Vault avisa que Always quebra a troca do token, mas neste setup Always funcionou e Never falhou. Para e-mail, ative o template Asynchronous Approval, use um e-mail verificado, e troque `AUTH0_CIBA_CHANNEL` para `email` com um novo deploy.
 7. **Segredos do Worker `builderops`.** Cadastre os quatro nomes do passo 4 e do passo 5 como secrets. Não use `bindings.secret()` no config antes disso: o deploy do assistente atual não deve passar a exigir segredo. `VETO_AGENT=off` desliga a função. Abra `/api/config` e confira `"veto": true` sem nenhum secret no JSON. Se continuar `false`, o checklist do doc explica quando declarar `bindings.secret()`.
 8. **Prova.** Entre em https://jrpasolini.github.io/BuilderOps/, conecte o Google Calendar, envie `agenda`, depois `criar lembrete de chuva` ou `reagendar 1 para AAAA-MM-DDTHH:MM`. O evento só muda depois da aprovação no Guardian ou no e-mail. Recusa ou timeout cancela. `Como está o tempo na minha cidade?` continua no fluxo antigo. Data além de 16 dias da Open-Meteo (hoje é o dia 0) não grava e não pede CIBA.
 
@@ -153,7 +153,7 @@ Live site: `https://jrpasolini.github.io/BuilderOps/`. Setup, plan limits, and t
 
 ## Roadmap
 
-Tiger Data hypertables → streaming dashboard → vector search → Auth0 FGA + permission-aware RAG. Google Calendar with Auth0 Token Vault and CIBA is implemented behind a flag. See `docs/challenges/VETO_AGENT.md`. It does not run until the owner sets the Worker secrets.
+Tiger Data hypertables → streaming dashboard → vector search → Auth0 FGA + permission-aware RAG. The Veto Agent is live, flag-controlled by `VETO_AGENT` (Google Calendar with Auth0 Token Vault and CIBA). See `docs/challenges/VETO_AGENT.md`.
 
 ## License
 
