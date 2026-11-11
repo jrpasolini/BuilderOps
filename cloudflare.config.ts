@@ -25,6 +25,14 @@ export default defineConfig({
       VETO_AGENT: bindings.text("auto"),
       AUTH0_CIBA_CHANNEL: bindings.text("guardian"),
       AUTH0_GOOGLE_CONNECTION: bindings.text("google-oauth2"),
+      // Public switches only. FGA_STORE_ID, FGA_CLIENT_ID, FGA_CLIENT_SECRET
+      // and optional FGA_MODEL_ID stay out of this file. bindings.secret()
+      // would mark them required and can block a deploy before they exist.
+      RAG_AGENT: bindings.text("auto"),
+      FGA_API_URL: bindings.text("https://api.us1.fga.dev"),
+      FGA_API_AUDIENCE: bindings.text("https://api.us1.fga.dev/"),
+      FGA_TOKEN_URL: bindings.text("https://auth.fga.dev/oauth/token"),
+      AI_EMBED_MODEL: bindings.text("@cf/baai/bge-m3"),
     },
     observability: {
       enabled: true,

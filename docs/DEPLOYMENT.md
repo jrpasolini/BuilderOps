@@ -53,6 +53,14 @@ The Worker creates `calendar_snapshots` and `calendar_approvals` on first use (`
 
 Full Portuguese setup and the paid-plan warnings: `docs/challenges/VETO_AGENT.md`.
 
+## Privacy-aware RAG secrets
+
+Document answers stay on the weather path until three Worker secrets exist: `FGA_STORE_ID`, `FGA_CLIENT_ID` and `FGA_CLIENT_SECRET`. `FGA_MODEL_ID` is optional. Do not put those values in `cloudflare.config.ts` or in Git, and do not declare `bindings.secret()` before they exist. `GET /api/config` reports `rag: true` only when they are present and well formed, and the response must not contain them. `RAG_AGENT=off` disables the feature even if the secrets exist.
+
+The public switches `RAG_AGENT`, `FGA_API_URL`, `FGA_API_AUDIENCE`, `FGA_TOKEN_URL` and `AI_EMBED_MODEL` have defaults in `cloudflare.config.ts`. The Worker calls Auth0 FGA with `fetch` and embeds the in-repo corpus with Workers AI on first use. No Vectorize binding is required. Weather and calendar behavior are unchanged while `rag` is false.
+
+Full Portuguese setup: `docs/challenges/RAG_AGENT.md`.
+
 ## Test checklist
 
 1. GitHub Actions: verify successful `Publish BuilderOps frontend` run and deployed static artifact.

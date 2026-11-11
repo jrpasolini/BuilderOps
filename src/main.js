@@ -6,10 +6,11 @@ const ui = {
   auth:el("authBtn"),status:el("status"),name:el("userName"),sub:el("userSub"),
   form:el("settings"),city:el("city"),unit:el("unit"),lang:el("lang"),save:el("save"),
   connect:el("connectCalendar"),calendarHint:el("calendarHint"),
+  knowledgeNav:el("knowledgeNav"),ragHint:el("ragHint"),
   chatForm:el("chatForm"),prompt:el("prompt"),send:el("send"),messages:el("messages"),mode:el("mode")
 };
 const CALENDAR_SCOPES = ["openid","profile","email","https://www.googleapis.com/auth/calendar.events"];
-let auth0, profile, conversationId = null, busy = false, vetoOn = false, googleConnection = "google-oauth2";
+let auth0, profile, conversationId = null, busy = false, vetoOn = false, ragOn = false, googleConnection = "google-oauth2";
 const appReturnUrl = new URL(import.meta.env.BASE_URL, window.location.origin).href;
 const explicitApi = String(import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
 // Verified Cloudflare account subdomain. The Worker named 'builderops' must be deployed separately.
@@ -42,7 +43,10 @@ function modeLabel(mode) {
     "ciba-approved": "CIBA · aprovado",
     "ciba-denied": "CIBA · encerrado",
     "veto-disabled": "Agenda desligada",
-    "calendar-error": "Agenda · erro"
+    "calendar-error": "Agenda · erro",
+    "rag": "RAG · FGA",
+    "rag-denied": "RAG · sem acesso",
+    "rag-error": "RAG · autorização indisponível"
   };
   return labels[mode] || "Fluxo verificado";
 }
@@ -95,6 +99,7 @@ async function loginState() {
   setProfile(await api("/api/profile"));
   enable(true);
   bubble("Perfil carregado: " + profile.city_name + ". Você pode alterar preferências e perguntar sobre o tempo.");
+  if (ragOn) bubble("Acervo de emergência ligado. Pergunte sobre evacuação e abrigos, ou sobre o orçamento da resposta. O acesso depende do seu usuário.");
 }
 async function init() {
   try {
@@ -107,8 +112,14 @@ async function init() {
       return;
     }
     vetoOn = Boolean(config.veto);
+    ragOn = Boolean(config.rag);
     googleConnection = typeof config.googleConnection === "string" && config.googleConnection ? config.googleConnection : "google-oauth2";
     ui.calendarHint.hidden = !vetoOn;
+    ui.ragHint.hidden = !ragOn;
+    if (ragOn) {
+      const label = ui.knowledgeNav?.querySelector("small");
+      if (label) label.textContent = "FGA";
+    }
     auth0=await createAuth0Client({
       domain:config.domain,
       clientId:config.clientId,
@@ -196,5 +207,11 @@ ui.chatForm.addEventListener("submit",async(e)=>{
     if (result.approval?.status==="pending") await watchApproval(result.approval);
   } catch(e) { bubble("Não foi possível responder: " + e.message); }
   finally { busy=false; ui.send.disabled=false; ui.prompt.focus(); }
+});
+ui.ragHint.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-question]");
+  if (!button) return;
+  ui.prompt.value = button.dataset.question || "";
+  if (!ui.prompt.disabled) ui.prompt.focus();
 });
 init();

@@ -1,10 +1,10 @@
-# BuilderOps — Context-Preserving Assistant + Veto Agent
+# BuilderOps — Context-Preserving Assistant + Veto Agent + Privacy-Aware RAG
 
 **MLH Global Hack Week — Builders Week 2026**
 
-BuilderOps is an identity-aware chat assistant designed to demonstrate user-specific context surviving across an authenticated first-party API and an external third-party API. The Veto Agent is now included. The project is structured so additional MLH challenges (Tiger Data event analytics, vector search and Auth0 FGA) can be added later.
+BuilderOps is an identity-aware chat assistant designed to demonstrate user-specific context surviving across an authenticated first-party API and an external third-party API. The Veto Agent is included. A privacy-aware RAG assistant is included behind `RAG_AGENT`: it answers from a fictional Vitória-ES climate-emergency corpus and uses Auth0 FGA so field staff never receive coordination-only budget text, even when that document is retrieved.
 
-**Current status (2026-11-10):** GitHub Pages frontend deployed at `https://jrpasolini.github.io/BuilderOps/`; Cloudflare Worker `builderops` uploaded and enabled at `https://builderops.antonio-pasolini.workers.dev`; Cloudflare D1 database `builderops-db` initialized. Both MLH challenges are live on that site and were submitted on 2026-11-10: Context-Preserving and The Veto Agent. Context-Preserving was verified with Auth0 Universal Login, first-party `GET /api/profile`, and an Open-Meteo answer via Workers AI chat. The Veto Agent has the Worker secrets set (`GET /api/config` returns `veto: true`). Google Calendar is connected through Token Vault. A CIBA Guardian push approval created "Alerta de chuva" events on 2026-11-11 and 2026-11-12. A denial on 2026-11-13 changed nothing.
+**Current status (2026-11-10):** GitHub Pages frontend deployed at `https://jrpasolini.github.io/BuilderOps/`; Cloudflare Worker `builderops` uploaded and enabled at `https://builderops.antonio-pasolini.workers.dev`; Cloudflare D1 database `builderops-db` initialized. Both MLH challenges are live on that site and were submitted on 2026-11-10: Context-Preserving and The Veto Agent. Context-Preserving was verified with Auth0 Universal Login, first-party `GET /api/profile`, and an Open-Meteo answer via Workers AI chat. The Veto Agent has the Worker secrets set (`GET /api/config` returns `veto: true`). Google Calendar is connected through Token Vault. A CIBA Guardian push approval created "Alerta de chuva" events on 2026-11-11 and 2026-11-12. A denial on 2026-11-13 changed nothing. The privacy-aware RAG assistant (11 Nov 2026) is in this repository behind `RAG_AGENT`. It stays off until the FGA secrets exist, so these two challenges keep their current behavior. After those secrets are set, `GET /api/config` returns `rag: true`.
 
 ## Architecture
 
@@ -24,10 +24,10 @@ Model docs: https://developers.cloudflare.com/ai/models/%40cf/deepseek-ai/deepse
 | Route | Method | Access | Purpose |
 |---|---|---|---|
 | `/api/health` | GET | Public | Basic health response |
-| `/api/config` | GET | Public | Non-secret Auth0 SPA identifiers |
+| `/api/config` | GET | Public | Non-secret Auth0 SPA identifiers, plus `veto` and `rag` flags |
 | `/api/profile` | GET | Auth0 JWT | Read/create authenticated user's profile |
 | `/api/profile` | PUT | Auth0 JWT | Update allowlisted preferences |
-| `/api/chat` | POST | Auth0 JWT | Retrieve profile, call Open-Meteo and Workers AI, persist conversation |
+| `/api/chat` | POST | Auth0 JWT | Calendar command, else FGA-gated corpus when `rag` is on and the question is about the plan, else profile + Open-Meteo + Workers AI |
 | `/api/history?id=<uuid>` | GET | Auth0 JWT | Return conversation only for its owner |
 
 ## Local setup
@@ -141,6 +141,20 @@ Live site: `https://jrpasolini.github.io/BuilderOps/`. Setup, plan limits, and t
 
 ![Denied veto flow: the 2026-11-13 rain reminder was refused and Google Calendar was not changed](docs/assets/veto-denied.png)
 
+## Privacy-aware RAG
+
+Third MLH challenge, same repository: an internal assistant for a fictional Vitória-ES heavy-rain exercise. Open documents in `operacao` (operating plan, field safety manual) are for every signed-in staff member. Restricted documents in `coordenacao` (response budget in R$, resource priority) are for the coordinator only. Retrieval can rank a restricted document, then an Auth0 FGA Batch Check for relation `viewer` on `document:<id>` drops it before the chat model sees the text. If FGA errors, the assistant uses no corpus text. A denial does not list restricted titles. Sources in the reply come only from allowed documents.
+
+Weather questions and calendar commands stay on their existing paths. With the flag off or the secrets missing, `GET /api/config` returns `rag: false` and the new hint stays hidden. Login, MFA, and the Veto Agent are unchanged.
+
+Setup and the manual checklist: `docs/challenges/RAG_AGENT.md`.
+
+The two images below are placeholders. After the live walkthrough, replace them with screenshots of the coordinator seeing the fictional budget and of field staff being denied that text.
+
+![Placeholder: coordinator sees the fictional response budget](docs/assets/rag-coordinator.svg)
+
+![Placeholder: field staff are denied the budget and do not receive its text](docs/assets/rag-field-denied.svg)
+
 ## Security notes
 
 - JWT signature, issuer, audience and expiration are verified server-side using Auth0 JWKS; identities are not accepted from client input.
@@ -149,11 +163,12 @@ Live site: `https://jrpasolini.github.io/BuilderOps/`. Setup, plan limits, and t
 - Workers AI receives the profile preferences, weather and recent conversation content but **not an Auth0 access token**; do not claim that these inputs are invisible to model processing.
 - UI uses `textContent` for AI output to avoid treating model output as HTML.
 - Optional model output is cleaned of any `<think>` spans before being displayed.
+- When RAG is on, the chat model receives only excerpts FGA allowed for `user:<jwt sub>`. The embedding call indexes the whole corpus on the server; denied chunks are not copied into that prompt. The FGA client secret and the FGA access token are not sent to the browser, to Open-Meteo, or to Workers AI. The user question is untrusted text.
 - Before real public use, implement rate limits, privacy/retention disclosure, history deletion and budget controls. Do not use real medical or sensitive personal data in the demo.
 
 ## Roadmap
 
-Tiger Data hypertables → streaming dashboard → vector search → Auth0 FGA + permission-aware RAG. The Veto Agent is live, flag-controlled by `VETO_AGENT` (Google Calendar with Auth0 Token Vault and CIBA). See `docs/challenges/VETO_AGENT.md`.
+Tiger Data hypertables → streaming dashboard. The Veto Agent is live, flag-controlled by `VETO_AGENT` (Google Calendar with Auth0 Token Vault and CIBA). The privacy-aware RAG assistant is live behind `RAG_AGENT` (Auth0 FGA, fictional Vitória climate-emergency corpus). See `docs/challenges/VETO_AGENT.md` and `docs/challenges/RAG_AGENT.md`.
 
 ## License
 
