@@ -118,6 +118,29 @@ Fontes, limites de plano e incertezas: `docs/challenges/VETO_AGENT.md`. Não col
 7. **Segredos do Worker `builderops`.** Cadastre os quatro nomes do passo 4 e do passo 5 como secrets. Não use `bindings.secret()` no config antes disso: o deploy do assistente atual não deve passar a exigir segredo. `VETO_AGENT=off` desliga a função. Abra `/api/config` e confira `"veto": true` sem nenhum secret no JSON. Se continuar `false`, o checklist do doc explica quando declarar `bindings.secret()`.
 8. **Prova.** Entre em https://jrpasolini.github.io/BuilderOps/, conecte o Google Calendar, envie `agenda`, depois `criar lembrete de chuva` ou `reagendar 1 para AAAA-MM-DDTHH:MM`. O evento só muda depois da aprovação no Guardian ou no e-mail. Recusa ou timeout cancela. `Como está o tempo na minha cidade?` continua no fluxo antigo. Data além de 16 dias da Open-Meteo (hoje é o dia 0) não grava e não pede CIBA.
 
+## Veto Agent demo
+
+For the MLH Global Hack Week Builders Week challenge **The Veto Agent**, the same assistant reads the signed-in user's Google Calendar through Auth0 Token Vault (Connected Accounts). A read (`agenda`) lists upcoming events and does not ask for approval. A write (`criar lembrete de chuva`, `reagendar`) pauses in the chat and sends an Auth0 CIBA Guardian push for out-of-band approval. Nothing is written to Google Calendar until that push is approved. Denial, or an expired request, cancels the action and leaves the calendar unchanged.
+
+Português: o agente lê a agenda pelo Token Vault; criar um lembrete ou reagendar só grava depois do push do Guardian, e a recusa cancela a ação.
+
+Chat commands:
+
+- `agenda`
+- `criar lembrete de chuva` [em AAAA-MM-DD]
+- `reagendar N para AAAA-MM-DDTHH:MM`
+- `status da aprovação`
+
+Live site: `https://jrpasolini.github.io/BuilderOps/`. Setup, plan limits, and the acceptance checklist: `docs/challenges/VETO_AGENT.md`.
+
+**Approved.** `agenda` reported no events in the next 30 days. `criar lembrete de chuva` paused for the Guardian push (conference message `Rain-alert-2026-11-11-p79`). After approval, Google Calendar had "Alerta de chuva" on 2026-11-11 at 08:00 (America/Sao_Paulo).
+
+![Approved veto flow: agenda, then criar lembrete de chuva, a Guardian push approved, and Alerta de chuva created on Google Calendar](docs/assets/veto-approved.png)
+
+**Denied.** The request for 2026-11-13 was refused. The chat answered: "A aprovação foi recusada ou expirou. A ação foi cancelada e o Google Calendar não foi alterado."
+
+![Denied veto flow: the 2026-11-13 rain reminder was refused and Google Calendar was not changed](docs/assets/veto-denied.png)
+
 ## Security notes
 
 - JWT signature, issuer, audience and expiration are verified server-side using Auth0 JWKS; identities are not accepted from client input.
