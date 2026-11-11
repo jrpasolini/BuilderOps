@@ -119,7 +119,7 @@ Checked against https://auth0.com/pricing and the CIBA pages above.
 | Guardian push | The push page says it is available for all Enterprise plans. `requested_expiry` of 300 or lower selects this channel, and the request fails if MFA push is not configured and email is not available as a fallback. |
 | CIBA email | The configure-CIBA page says email needs the **Auth0 for AI Agents add-on on a paid plan**. The user needs a verified email. Template: Branding > Email Templates > Asynchronous Approval. |
 | Token Vault quota | Pricing table "Token Vault": Free 2, Essentials 3 + add-on, Professional 3 + add-on, Enterprise 4 + add-on. The add-on is described as "Unlimited Token Vault". The page does not say what the number counts. |
-| MFA policy Always | The Token Vault configuration page says a tenant MFA policy of Always must be set back to Never or the Vault exchange fails. |
+| MFA policy Always | The Token Vault configuration page says a tenant MFA policy of Always must be set back to Never or the Vault exchange fails. On this tenant the opposite held: keep **Always**. The My Account API default policy requires 2FA, and with Never it returned "Multifactor authentication required". |
 | Google sensitive scope | `calendar.events` needs the consent screen. Unverified apps are limited to test users. |
 
 The Okta service-specific terms (the April 30, 2026 revision) say the base CIBA service on Enterprise includes the Guardian app and SDK channels, and that the Auth0 for AI Agents add-on is what adds email and other channels. Treat that as supporting detail; the Auth0 docs above are the operational source.
@@ -206,8 +206,8 @@ O cliente CIBA também é confidencial e first-party. Pode ser um segundo aplica
 Guardian, se o canal for push:
 
 1. **Security > Multi-factor Auth**. Ative **Push Notification** usando **Auth0 Guardian**. Em Push Notification App, escolha o app Guardian. https://auth0.com/docs/secure/multi-factor-authentication/auth0-guardian
-2. Não deixe a política de MFA em **Always**. A página de configuração do Token Vault diz que Always faz a troca do token falhar. https://auth0.com/docs/secure/call-apis-on-users-behalf/token-vault/configure-token-vault
-3. Jeito prático de inscrever sem ficar em Always: ponha a política em Always, entre uma vez no site, instale o app Auth0 Guardian e conclua o QR code, depois volte a política para **Never** antes de testar a agenda. Alternativa: uma Action que pede inscrição só em login interativo (`event.transaction.protocol`), e não no token endpoint.
+2. Mantenha a política de MFA em **Always**. A política padrão da My Account API exige 2FA: com **Never**, essa API respondeu "Multifactor authentication required". A página de configuração do Token Vault diz que Always faz a troca do token falhar (https://auth0.com/docs/secure/call-apis-on-users-behalf/token-vault/configure-token-vault). Neste tenant Always funcionou e Never falhou.
+3. Inscreva o usuário com a política em Always: entre no site, instale o app Auth0 Guardian e conclua o QR code. Não volte a política para Never antes de testar a agenda.
 4. Em **User Management > Users**, abra o usuário e confira um fator push inscrito.
 5. Se o usuário não tiver push e o e-mail de CIBA estiver ligado, a Auth0 pode cair para o e-mail em vez de recusar. Se nenhum canal servir, `/bc-authorize` falha e o chat mostra o código OAuth, sem gravar no Google.
 
