@@ -72,6 +72,7 @@ Researched 2026-11-10 from the current Auth0 docs. The Worker speaks HTTP. It do
 - Google connection setup, including Offline Access: https://auth0.com/ai/docs/connections/google
 - Calling third-party APIs on the user's behalf (Auth0 for AI Agents): https://auth0.com/ai/docs/get-started/call-third-party-apis-on-users-behalf
 - The SPA starts the link with `connectAccountWithRedirect` (auth0-spa-js 2.6+, DPoP retry in 2.7). This repo depends on `^2.7.0`. Example: https://github.com/auth0/auth0-spa-js/blob/main/examples/token-vault.md
+- With veto on, the SDK cache is `localStorage` so the refresh token survives the Connected Accounts redirect, protected by DPoP. The BuilderOps API needs **Allow Offline Access**, and the My Account API default policy may require MFA, so the tenant MFA policy is set to **Always**. With veto off the cache stays `memory`.
 - My Account API audience is `https://{tenant}/me/` with `create:me:connected_accounts`, `read:me:connected_accounts` and `delete:me:connected_accounts`: https://auth0.com/docs/manage-users/my-account-api
 - The browser does not send its refresh token to the Worker. The Worker therefore uses the **access token exchange**, with the Custom API Client of the API `https://builderops-api`: https://auth0.com/docs/secure/call-apis-on-users-behalf/token-vault/access-token-exchange-with-token-vault
 - Grant: `urn:auth0:params:oauth:grant-type:token-exchange:federated-connection-access-token`
@@ -166,7 +167,7 @@ Os escopos enviados pelo botão do site substituem os escopos marcados no dashbo
 
 ### 3. Auth0 — My Account API, MRRT e refresh token da SPA
 
-Isto só passa a valer quando `veto` está ligado. Com `veto: false` o SPA continua sem refresh token e sem DPoP.
+Isto só passa a valer quando `veto` está ligado. Com `veto: false` o SPA continua sem refresh token e sem DPoP, e o cache do SDK permanece `memory`. Com o veto ligado, o cache usa `localStorage` para o refresh token sobreviver ao redirecionamento de Connected Accounts, protegido por DPoP. A API do BuilderOps precisa de **Allow Offline Access** ligado, e a política padrão da My Account API pode exigir MFA (política de MFA do tenant em **Always**).
 
 1. **Applications > APIs** e ative **Auth0 My Account API**, se ainda não estiver ativa. https://auth0.com/docs/manage-users/my-account-api
 2. Abra essa API > **Application Access**. No SPA, **User Access > Authorized**.

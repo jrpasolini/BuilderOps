@@ -113,7 +113,7 @@ async function init() {
       domain:config.domain,
       clientId:config.clientId,
       authorizationParams:{redirect_uri:appReturnUrl,audience:config.audience},
-      cacheLocation:"memory",
+      cacheLocation:vetoOn ? "localstorage" : "memory",
       useRefreshTokens:vetoOn,
       ...(vetoOn ? {useMrrt:true, useDpop:true} : {})
     });
@@ -122,24 +122,33 @@ async function init() {
       await auth0.handleRedirectCallback();
       window.history.replaceState({},document.title,appReturnUrl);
     } else if (vetoOn && search.has("connect_code") && search.has("state")) {
-      const connected = await auth0.handleRedirectCallback();
-      window.history.replaceState({},document.title,appReturnUrl);
-      bubble(connected?.connection ? "Google Calendar conectado (" + connected.connection + ")." : "Conexão do calendário concluída.");
+      try {
+        const connected = await auth0.handleRedirectCallback();
+        window.history.replaceState({},document.title,appReturnUrl);
+        bubble(connected?.connection ? "Google Calendar conectado (" + connected.connection + ")." : "Conexão do calendário concluída.");
+      } catch (e) {
+        window.history.replaceState({},document.title,appReturnUrl);
+        bubble("Não foi possível conectar o Google Calendar: " + e.message);
+      }
     } else if (vetoOn && search.has("error") && search.has("state") && !search.has("code")) {
       const code = search.get("error") || "";
       window.history.replaceState({},document.title,appReturnUrl);
       bubble("A conexão do Google Calendar não foi concluída" + (/^[a-z0-9_]+$/i.test(code) ? " (" + code + ")." : "."));
     }
     ui.connect.addEventListener("click", async () => {
-      if (!auth0?.connectAccountWithRedirect) {
-        bubble("O SDK do Auth0 neste navegador não expõe a conexão de contas.");
-        return;
+      try {
+        if (!auth0?.connectAccountWithRedirect) {
+          bubble("O SDK do Auth0 neste navegador não expõe a conexão de contas.");
+          return;
+        }
+        await auth0.connectAccountWithRedirect({
+          connection: googleConnection,
+          scopes: CALENDAR_SCOPES,
+          redirectUri: appReturnUrl
+        });
+      } catch (e) {
+        bubble("Não foi possível conectar o Google Calendar: " + e.message);
       }
-      await auth0.connectAccountWithRedirect({
-        connection: googleConnection,
-        scopes: CALENDAR_SCOPES,
-        redirectUri: appReturnUrl
-      });
     });
     ui.auth.addEventListener("click",async()=>{
       if (await auth0.isAuthenticated()) {
