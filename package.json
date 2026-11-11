@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Auth0 identity-aware assistant with a Cloudflare Worker, a first-party profile API and Open-Meteo",
+  "description": "Auth0 identity-aware assistant with weather, a vetoed calendar agent, and an FGA-gated emergency corpus",
   "scripts": {
     "dev": "cf dev",
     "build": "cf build",
     "deploy": "cf deploy",
-    "check": "node --check src/worker.js && node --check src/veto.js && node --check src/main.js && node --test tests/*.test.js",
+    "check": "node scripts/build-corpus.mjs --check && node --check src/worker.js && node --check src/veto.js && node --check src/rag/agent.js && node --check src/rag/fga.js && node --check src/rag/corpus.js && node --check src/main.js && node --check scripts/fga-write-tuples.mjs && node --check scripts/build-corpus.mjs && node --test tests/*.test.js",
+    "corpus:build": "node scripts/build-corpus.mjs",
+    "fga:tuples": "node scripts/fga-write-tuples.mjs",
     "build:pages": "vite build --config vite.pages.config.ts"
   },
   "dependencies": {

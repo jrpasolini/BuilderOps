@@ -1,0 +1,34 @@
+{
+  "writes": [
+    {
+      "user": "user:*",
+      "relation": "viewer",
+      "object": "folder:operacao"
+    },
+    {
+      "user": "user:{{COORDINATOR_SUB}}",
+      "relation": "viewer",
+      "object": "folder:coordenacao"
+    },
+    {
+      "user": "folder:operacao",
+      "relation": "parent",
+      "object": "document:plano-operacional"
+    },
+    {
+      "user": "folder:operacao",
+      "relation": "parent",
+      "object": "document:manual-seguranca-campo"
+    },
+    {
+      "user": "folder:coordenacao",
+      "relation": "parent",
+      "object": "document:orcamento-resposta"
+    },
+    {
+      "user": "folder:coordenacao",
+      "relation": "parent",
+      "object": "document:priorizacao-recursos"
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { CITIES, DEFAULT_PROFILE, validSettings, weatherUrl, formatWeather } from "./shared.js";
+import { isRagQuestion, processRagTurn, ragFailureAnswer } from "./rag/agent.js";
+import { ragConfig, ragPublicConfig } from "./rag/fga.js";
 import { isCalendarCommand, pollCalendarApproval, processCalendarTurn, vetoPublicConfig } from "./veto.js";
 
 const responseHeaders = {
@@ -122,11 +124,13 @@ async function chat(request, env, sub) {
     await env.DB.prepare("INSERT INTO conversations (id,user_sub) VALUES (?,?)").bind(id,sub).run();
   }
   const profile = await firstPartyProfile(env,sub);
-  if (isCalendarCommand(question)) return calendarTurn(request, env, sub, id, profile, question);
+  const pathKind = selectChatPath(question, env, input);
+  if (pathKind === "calendar") return calendarTurn(request, env, sub, id, profile, question);
   const previous = await env.DB.prepare(
     "SELECT role,content FROM messages WHERE user_sub=? AND conversation_id=? " +
     "ORDER BY created_at DESC,rowid DESC LIMIT 8"
   ).bind(sub,id).all();
+  if (pathKind === "rag") return ragTurn(env, sub, id, profile, question, (previous.results || []).reverse());
   await env.DB.prepare(
     "INSERT INTO messages (id,conversation_id,user_sub,role,content) VALUES (?,?,?,?,?)"
   ).bind(crypto.randomUUID(),id,sub,"user",question).run();
@@ -160,6 +164,42 @@ async function chat(request, env, sub) {
 function bearerToken(request) {
   const header = request.headers.get("authorization") || "";
   return header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+}
+export function selectChatPath(question, env, input) {
+  if (isCalendarCommand(question)) return "calendar";
+  if (ragConfig(env).enabled && (isRagQuestion(question) || input?.mode === "rag")) return "rag";
+  return "weather";
+}
+function ragFallback(profile) {
+  return {
+    answer: ragFailureAnswer(profile),
+    mode: "rag-error",
+    thirdParty: "Auth0 FGA",
+    sources: []
+  };
+}
+async function ragTurn(env, sub, id, profile, question, history) {
+  await env.DB.prepare(
+    "INSERT INTO messages (id,conversation_id,user_sub,role,content) VALUES (?,?,?,?,?)"
+  ).bind(crypto.randomUUID(), id, sub, "user", question).run();
+  let outcome;
+  try {
+    outcome = await processRagTurn({env, sub, profile, question, history, fetchImpl: fetch});
+  } catch (error) {
+    console.error(JSON.stringify({event:"rag_error", code: error instanceof Error ? error.name : "unknown"}));
+    outcome = null;
+  }
+  if (!outcome) outcome = ragFallback(profile);
+  await rememberAssistant(env, sub, id, outcome.answer);
+  const body = {
+    conversationId: id,
+    answer: outcome.answer,
+    mode: outcome.mode,
+    profileUsed: profile,
+    thirdParty: outcome.thirdParty
+  };
+  if (outcome.sources?.length) body.sources = outcome.sources;
+  return json(body);
 }
 async function rememberAssistant(env, sub, conversationId, answer) {
   await env.DB.prepare(
@@ -240,7 +280,8 @@ async function routeRequest(request, env) {
         !String(env.AUTH0_DOMAIN || "").startsWith("REPLACE") &&
         !String(env.AUTH0_AUDIENCE || "").includes("example");
       const veto = vetoPublicConfig(env);
-      const body = {domain:env.AUTH0_DOMAIN,clientId:env.AUTH0_CLIENT_ID,audience:env.AUTH0_AUDIENCE,ready,veto:veto.enabled};
+      const rag = ragPublicConfig(env);
+      const body = {domain:env.AUTH0_DOMAIN,clientId:env.AUTH0_CLIENT_ID,audience:env.AUTH0_AUDIENCE,ready,veto:veto.enabled,rag:rag.enabled};
       if (veto.enabled) body.googleConnection = veto.connection;
       return json(body);
     }
