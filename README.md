@@ -1,4 +1,4 @@
-# BuilderOps — Context-Preserving Assistant
+# BuilderOps — Context-Preserving Assistant + Veto Agent
 
 **MLH Global Hack Week — Builders Week 2026**
 
