@@ -149,11 +149,17 @@ Weather questions and calendar commands stay on their existing paths. With the f
 
 Setup and the manual checklist: `docs/challenges/RAG_AGENT.md`.
 
-The two images below are placeholders. After the live walkthrough, replace them with screenshots of the coordinator seeing the fictional budget and of field staff being denied that text.
+**Coordinator.** Signed in as `alpj`, the total flood-response budget came back as **R$ 1.840.000**, code **ORC-VIX-7741**.
 
-![Placeholder: coordinator sees the fictional response budget](docs/assets/rag-coordinator.svg)
+![Coordinator alpj sees the fictional flood-response budget of R$ 1.840.000, code ORC-VIX-7741](docs/assets/rag-coordinator.png)
 
-![Placeholder: field staff are denied the budget and do not receive its text](docs/assets/rag-field-denied.svg)
+**Field staff, denied.** Signed in as `encarregado`, the same question was answered that the authorized documents do not cover the budget.
+
+![Field user encarregado is told the authorized documents do not cover the flood-response budget](docs/assets/rag-field-denied.png)
+
+**Field staff, routes.** The same field user still receives evacuation routes and shelters.
+
+![Field user encarregado still receives evacuation routes and shelters](docs/assets/rag-field-routes.png)
 
 ## Security notes
 

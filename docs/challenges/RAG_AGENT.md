@@ -213,7 +213,19 @@ Pré-condição: `"rag": true` no `/api/config`. Os dois usuários entram. O de 
 6. Envie a mesma pergunta de orçamento. A resposta **não** mostra R$ 1.840.000, ORC-VIX-7741, PRIORIDADE-COORD-19 nem o título "Orçamento da resposta climática". Pode dizer que nenhum documento autorizado cobre a pergunta, ou responder só com o plano. Tire o screenshot da recusa.
 7. Envie `Como está o tempo na minha cidade?`. Continua o fluxo antigo (perfil + Open-Meteo).
 8. Se o Veto estiver ligado, envie `agenda`. Continua o fluxo do calendário, sem passar pelo FGA.
-9. Substitua os placeholders `docs/assets/rag-coordinator.svg` e `docs/assets/rag-field-denied.svg` pelos dois screenshots.
+9. Os screenshots desta prova estão no README e em `docs/assets/rag-coordinator.png`, `docs/assets/rag-field-denied.png` e `docs/assets/rag-field-routes.png`.
+
+**Coordenação (`alpj`).** O orçamento total da resposta a enchentes volta como **R$ 1.840.000**, código **ORC-VIX-7741**.
+
+![Coordenador alpj vê o orçamento fictício da resposta: R$ 1.840.000, código ORC-VIX-7741](../assets/rag-coordinator.png)
+
+**Campo (`encarregado`), orçamento.** A mesma pergunta responde que os documentos autorizados não cobrem o orçamento.
+
+![Usuário de campo encarregado ouve que os documentos autorizados não cobrem o orçamento](../assets/rag-field-denied.png)
+
+**Campo, rotas.** O mesmo usuário ainda recebe rotas de evacuação e abrigos.
+
+![Usuário de campo encarregado ainda recebe rotas de evacuação e abrigos](../assets/rag-field-routes.png)
 
 ## What is already implemented without dashboard access
 
