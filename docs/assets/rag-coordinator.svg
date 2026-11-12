@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
-  <rect width="960" height="540" fill="#121b2f"/>
-  <rect x="32" y="32" width="896" height="476" rx="16" fill="#0e1424" stroke="#29344e"/>
-  <text x="56" y="88" fill="#a4aff5" font-family="Inter, sans-serif" font-size="14" font-weight="700">PLACEHOLDER  replace after the live demo</text>
-  <text x="56" y="140" fill="#f2f5ff" font-family="Inter, sans-serif" font-size="28">Coordinator sees the budget</text>
-  <text x="56" y="190" fill="#9ba7c0" font-family="Inter, sans-serif" font-size="16">Sign in as the coordinator. Ask about the response budget.</text>
-  <text x="56" y="218" fill="#9ba7c0" font-family="Inter, sans-serif" font-size="16">The answer includes the fictional total R$ 1.840.000 and lists the budget as a source.</text>
-  <text x="56" y="270" fill="#74d8b3" font-family="Inter, sans-serif" font-size="14">Save the real screenshot as docs/assets/rag-coordinator.png and point the README at it.</text>
-</svg>
